@@ -132,6 +132,7 @@ def main(argv):
    #Parse arguments
    parser = argparse.ArgumentParser(description='Fiber walks mixing time estimation')
 
+   #required arguments
    requiredArgs = parser.add_argument_group('required arguments')
    requiredArgs.add_argument('-c','--matrix',
                        dest='matrix',
@@ -147,9 +148,9 @@ def main(argv):
                        metavar='ini.file',
                        type=str,
                        help='path to initial node')
-   requiredArgs.add_argument('-l','--latte',dest='latte',metavar='/latte/path/',type=str,default=C_LATTEDIR,
+   #optional arguments
+   parser.add_argument('-l','--latte',dest='latte',metavar='/latte/path/',type=str,default=C_LATTEDIR,
                    help='path to LattE binaries')
-
    parser.add_argument('-r','--runs',dest='runs',metavar='N',type=int,default=1,
                    help='number of random walk runs, default is 1')
    parser.add_argument('-t','--threads',dest='threads',metavar='N',type=int,default=C_THREADS,
