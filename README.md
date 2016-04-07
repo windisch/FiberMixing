@@ -33,7 +33,7 @@ with `-t,--threads`.
 
 ```bash
 sage -python fiberWalks.py --matrix examples/matrix.mat 
-                           --markov examples/markov.mat 
+                           --markov examples/markov.mat  
                            --initial examples/initial.mat 
                            --runs 1000 
                            --threads 5
