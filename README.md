@@ -6,7 +6,7 @@ matrix specified in `matrix.mat` which starts at `initial.mat` and
 which uses the Markov moves as specified in `markov.mat` (these
 matrices have to be in)
 
-```python
+```bash
 sage -python fiberWalks.py --matrix examples/matrix.mat --markov examples/markov.mat --initial examples/initial.mat 
 ```
 
@@ -29,6 +29,6 @@ can be specified, which will be processed consecutively. These random
 walks can be perfomed in parallel by specifying the number of threads
 with `-t,--threads`.
 
-```python
+```bash
 sage -python fiberWalks.py --matrix examples/matrix.mat --markov examples/markov.mat --initial examples/initial.mat --runs 1000 --threads 5
 ```
