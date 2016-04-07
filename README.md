@@ -3,14 +3,16 @@
 ### Usage
 The following performs the simple walk on the fiber of the
 matrix specified in `matrix.mat` which starts at `initial.mat` and
-which uses the Markov moves as specified in `markov.mat` (these
-matrices have to be in)
+which uses the Markov moves as specified in `markov.mat`
 
 ```bash
 sage -python fiberWalks.py --matrix examples/matrix.mat 
                            --markov examples/markov.mat 
                            --initial examples/initial.mat 
 ```
+
+*All files containing matrices or vectors have to be in the
+[4ti2](www.4ti2.de)/[LattE](https://www.math.ucdavis.edu/~latte/)-format.*
 
 The random walk runs until the approximated distribution differs from
 the uniform distribution by at most 0.25 (i.e. the mixing time). The
