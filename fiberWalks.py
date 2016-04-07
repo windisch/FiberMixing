@@ -13,13 +13,21 @@ from multiprocessing import Process
 from multiprocessing import Pool
 from multiprocessing import freeze_support
 
-N_THREADS=1
+C_THREADS=1
+C_LATTEBIN='count'
+C_LATTEDIR=''
+C_LATTEPAR='--count-lattice-points'
+C_LATTEOUT='numOfLatticePoints'
 
 def countFiber(A,v):
    b=np.array([[i for i in A.dot(v)]])
-   latteBin="/opt/latte-integrale-1.7.1/bin/count"
-   lattePara="--count-lattice-points"
-   latteOut="numOfLatticePoints"
+   global C_LATTEBIN
+   global C_LATTEDIR
+   global C_LATTEPAR
+   global C_LATTEOUT
+   #latteBin="/opt/latte-integrale-1.7.1/bin/count"
+   #lattePara="--count-lattice-points"
+   #latteOut="numOfLatticePoints"
    tDir=tmp_dir()
    tFile=tDir+'fiberCount.latte'
    with open(tFile,'wb') as f:
@@ -37,14 +45,14 @@ def countFiber(A,v):
          f.write(str(i)+' ')
    os.chdir(tDir)
    #run LattE
-   call([latteBin,lattePara,tFile])
+   call([C_LATTEDIR+C_LATTEBIN,C_LATTEPAR,tFile])
    #parse output
-   with open(tDir+latteOut,'r') as f:
+   with open(tDir+C_LATTEOUT,'r') as f:
       return int(f.read())
 
 
 def averageMixingTime(A,M,u,m,verbose=False):
-   global N_THREADS
+   global C_THREADS
    n=countFiber(A,u)
    #x=np.array([uniformWalk(A,M,u,n,verbose=verbose) for i in xrange(m)])
 
@@ -53,7 +61,7 @@ def averageMixingTime(A,M,u,m,verbose=False):
    u_args=itertools.repeat(u,m)
    n_args=itertools.repeat(n,m)
    v_args=itertools.repeat(verbose,m)
-   p = Pool(N_THREADS)
+   p = Pool(C_THREADS)
    x=np.array(p.map(uniformWalk_par,itertools.izip(A_args,M_args,u_args,n_args,v_args)))
 
    plt.hist(x,facecolor='c',bins=20)
@@ -64,7 +72,7 @@ def averageMixingTime(A,M,u,m,verbose=False):
    #plt.axis([40, 160, 0, 0.03])
    plt.grid(True)
    plt.show()
-   return sum([float(i)/m for i in x])
+   return x.mean() 
 
 def hypergeoWalk(M,u,n):
    return 'TODO'
@@ -105,10 +113,11 @@ def uniformWalk(A,M,u,n=0,verbose=False):
 
 
 def main(argv):
-   global N_THREADS
+   global C_THREADS
+   global C_LATTEDIR
 
    #Parse arguments
-   parser = argparse.ArgumentParser(description='Process some integers.')
+   parser = argparse.ArgumentParser(description='Fiber walks mixing time estimation')
    parser.add_argument('--matrix',
                        dest='matrix',
                        metavar='mat.file',
@@ -124,7 +133,9 @@ def main(argv):
                    help='the number of times the random walk is runned')
    parser.add_argument('--threads',dest='threads',metavar='N',type=int,default=1,
                    help='the number of threads used')
-   parser.add_argument('--verbose', help="Turn on verbose-mode",action="store_true")
+   parser.add_argument('--latte',dest='latte',metavar='dir',type=str,default='',
+                   help='path to LattE binaries')
+   parser.add_argument('--verbose', help="turn on verbose-mode",action="store_true")
    args = parser.parse_args()
 
    #read input
@@ -132,7 +143,8 @@ def main(argv):
    A=f.read_matrix(args.matrix)
    M=f.read_matrix(args.markov)
    u=f.read_matrix(args.initial)
-   N_THREADS=args.threads
+   C_THREADS=args.threads
+   C_LATTEDIR=args.latte
 
    #convert input
    A=np.array(A)
