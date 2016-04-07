@@ -5,7 +5,6 @@ import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import itertools
 import argparse
-from matplotlib.backends.backend_pdf import PdfPages
 from random import randint
 from subprocess import call
 from sage.all import *
