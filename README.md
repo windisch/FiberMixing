@@ -21,8 +21,8 @@ in `out.eps`.
 ### Requirements
 The software [LattE](https://www.math.ucdavis.edu/~latte/) is used to
 count the number of integer points in the fiber. Unless the binaries
-are not available under `$PATH`, the path to latte can be specified
-with `-l,--latte`.
+of Latte are not in a path from `$PATH`, the path to LattE can be
+specified with `-l,--latte`.
 
 
 ### Multiple runs and parallel computing
