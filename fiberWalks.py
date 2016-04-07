@@ -111,7 +111,7 @@ def estimateMixing(A,M,u,fibersize,runs,verbose,thinning,burnin):
    return mt.mean()
 
 def next(u,M):
-   m=(2*np.random.randint(0,2)-1)*M[np.random.randint(0,len(M))]
+   m=np.random.choice([1,-1])*M[np.random.randint(0,len(M))]
    if all(j>=0 for j in u+m):
       u=u+m
    return u
