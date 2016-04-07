@@ -22,6 +22,12 @@ C_CURDIR=os.path.dirname(os.path.abspath(__file__))+'/'
 C_OUTFILE_FIG='out.eps'
 C_OUTFILE_DAT='out.npy'
 
+#walk specific parameters
+DEF_THINNING=1
+DEF_VERBOSE=False
+DEF_RUNS=1
+DEF_BURNIN=0
+
 def countFiber(A,v):
    b=np.array([[i for i in A.dot(v)]])
    global C_LATTEBIN
@@ -54,19 +60,20 @@ def countFiber(A,v):
       return int(f.read())
 
 
-def averageMixingTime(A,M,u,m,verbose=False):
+def averageMixingTime(A,M,u,m,verbose,thinning,burnin):
    global C_THREADS
    global C_CURDIR
    n=countFiber(A,u)
-   #x=np.array([uniformWalk(A,M,u,n,verbose=verbose) for i in xrange(m)])
 
    A_args=itertools.repeat(A,m)
    M_args=itertools.repeat(M,m)
    u_args=itertools.repeat(u,m)
    n_args=itertools.repeat(n,m)
-   v_args=itertools.repeat(verbose,m)
+   verbose_args=itertools.repeat(verbose,m)
+   thinning_args=itertools.repeat(thinning,m)
+   burnin_args=itertools.repeat(burnin,m)
    p = Pool(C_THREADS)
-   x=np.array(p.map(uniformWalk_par,itertools.izip(A_args,M_args,u_args,n_args,v_args)))
+   x=np.array(p.map(walk_par,itertools.izip(A_args,M_args,u_args,n_args,verbose_args,thinning_args,burnin_args)))
    mean=x.mean()
 
    plt.hist(x,facecolor='c',bins=20)
@@ -84,43 +91,44 @@ def averageMixingTime(A,M,u,m,verbose=False):
       np.save(f,x)
 
    #plt.show()
-   return x.mean() 
+   return x.mean()
 
-def hypergeoWalk(M,u,n):
-   return 'TODO'
+def next(u,M):
+   m=(2*randint(0,1)-1)*M[randint(0,len(M)-1)]
+   if all(j>=0 for j in u+m):
+      u=u+m
+   return u
 
-#thining; burn-in
+def walk_par(args):
+   return walk(*args)
 
-
-def uniformWalk_par(args):
-    return uniformWalk(*args)
-
-def uniformWalk(A,M,u,n=0,verbose=False):
-   if n==0:
-       n=countFiber(A,u)
-       print n
-   numMoves=len(M)
+def walk(A,M,u,n,verbose,thinning,burnin):
    T={}
    i=0
+   k=0
    d=1
+   #burnin
+   for i in xrange(burnin):
+      u=next(u,M)
    while d>0.25:
-      i+=1
-      #update hash table
-      if tuple(u) in T:
-         T[tuple(u)]+=1
-      else:
-         T[tuple(u)]=1
+      k+=1
+      if k%thinning==0:
+          i+=1
+          #update hash table
+          if tuple(u) in T:
+             T[tuple(u)]+=1
+          else:
+             T[tuple(u)]=1
 
-      #check distance to uniform
-      d=0.5*sum([abs((float(T[x])/i)-1/float(n)) for x in T])+ 0.5*(float(n-len(T)))/n
-      if verbose:
-         if i%1000==0:
-            print d,i
+          #check distance to uniform
+          d=0.5*sum([abs((float(T[x])/i)-1/float(n)) for x in T])+ 0.5*(float(n-len(T)))/n
+          if verbose:
+             if i%1000==0:
+                print d,i
 
-      #sample move
-      m=(2*randint(0,1)-1)*M[randint(0,numMoves-1)]
-      if all(i>=0 for i in u+m):
-           u=u+m
+      #sample next fiber element
+      u=next(u,M)
+
    return i
 
 
@@ -128,6 +136,10 @@ def main(argv):
    global C_CURDIR
    global C_THREADS
    global C_LATTEDIR
+   global DEF_THINNING
+   global DEF_BURNIN
+   global DEF_VERBOSE
+   global DEF_RUNS
 
    #Parse arguments
    parser = argparse.ArgumentParser(description='Fiber walks mixing time estimation')
@@ -151,11 +163,15 @@ def main(argv):
    #optional arguments
    parser.add_argument('-l','--latte',dest='latte',metavar='/latte/path/',type=str,default=C_LATTEDIR,
                    help='path to LattE binaries')
-   parser.add_argument('-r','--runs',dest='runs',metavar='N',type=int,default=1,
-                   help='number of random walk runs, default is 1')
+   parser.add_argument('-r','--runs',dest='runs',metavar='N',type=int,default=DEF_RUNS,
+                   help='number of random walk runs, default is '+str(DEF_RUNS))
    parser.add_argument('-t','--threads',dest='threads',metavar='N',type=int,default=C_THREADS,
                    help='number of threads used, default is '+str(C_THREADS))
-   parser.add_argument('-v','--verbose', help="turn on verbose-mode",action="store_true")
+   parser.add_argument('-s','--thinning',dest='thinning',metavar='N',type=int,default=DEF_THINNING,
+                   help='take only every Nth sample, default is '+str(DEF_THINNING))
+   parser.add_argument('-b','--burn-in',dest='burnin',metavar='N',type=int,default=DEF_THINNING,
+                   help='do a burn-in with N steps before sampling, default is '+str(DEF_BURNIN))
+   parser.add_argument('-v','--verbose', help="turn on verbose-mode",action="store_true",default=DEF_VERBOSE)
    args = parser.parse_args()
 
    #read input
@@ -165,12 +181,13 @@ def main(argv):
    u=f.read_matrix(args.initial)
    C_THREADS=args.threads
    C_LATTEDIR=args.latte
-
+   thinning=args.thinning
+   burnin=args.burnin
    #convert input
    A=np.array(A)
    u=(np.array(u))[0]
    M=[m for m in M]
-   print averageMixingTime(A,M,u,m=args.runs,verbose=args.verbose)
+   print averageMixingTime(A,M,u,args.runs,args.verbose,thinning,burnin)
 
 if __name__ == "__main__":
     freeze_support()
