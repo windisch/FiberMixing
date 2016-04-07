@@ -27,6 +27,7 @@ DEF_THINNING=1
 DEF_VERBOSE=False
 DEF_RUNS=1
 DEF_BURNIN=0
+DEF_FIBERSIZE=-1
 
 def countFiber(A,v):
    b=np.array([[i for i in A.dot(v)]])
@@ -60,20 +61,19 @@ def countFiber(A,v):
       return int(f.read())
 
 
-def averageMixingTime(A,M,u,m,verbose,thinning,burnin):
+def averageMixingTime(A,M,u,fibersize,runs,verbose,thinning,burnin):
    global C_THREADS
    global C_CURDIR
-   n=countFiber(A,u)
 
-   A_args=itertools.repeat(A,m)
-   M_args=itertools.repeat(M,m)
-   u_args=itertools.repeat(u,m)
-   n_args=itertools.repeat(n,m)
-   verbose_args=itertools.repeat(verbose,m)
-   thinning_args=itertools.repeat(thinning,m)
-   burnin_args=itertools.repeat(burnin,m)
+   A_args=itertools.repeat(A,runs)
+   M_args=itertools.repeat(M,runs)
+   u_args=itertools.repeat(u,runs)
+   fibersize_args=itertools.repeat(fibersize,runs)
+   verbose_args=itertools.repeat(verbose,runs)
+   thinning_args=itertools.repeat(thinning,runs)
+   burnin_args=itertools.repeat(burnin,runs)
    p = Pool(C_THREADS)
-   x=np.array(p.map(walk_par,itertools.izip(A_args,M_args,u_args,n_args,verbose_args,thinning_args,burnin_args)))
+   x=np.array(p.map(walk_par,itertools.izip(A_args,M_args,u_args,fibersize_args,verbose_args,thinning_args,burnin_args)))
    mean=x.mean()
 
    plt.hist(x,facecolor='c',bins=20)
@@ -81,7 +81,6 @@ def averageMixingTime(A,M,u,m,verbose,thinning,burnin):
    plt.ylabel('Number of occurences')
    plt.title(r'Mixing time')
    plt.axvline(mean, color='b', linestyle='dashed', linewidth=2)
-   #plt.text(mean,10,'Arithmethic mean',rotation=90)
    #plt.axis([40, 160, 0, 0.03])
    plt.grid(True)
    #save figure to outfile
@@ -165,6 +164,8 @@ def main(argv):
                    help='path to LattE binaries')
    parser.add_argument('-r','--runs',dest='runs',metavar='N',type=int,default=DEF_RUNS,
                    help='number of random walk runs, default is '+str(DEF_RUNS))
+   parser.add_argument('-f','--fiber-size',dest='fibersize',metavar='N',type=int,default=DEF_FIBERSIZE,
+                   help='the size of the fiber')
    parser.add_argument('-t','--threads',dest='threads',metavar='N',type=int,default=C_THREADS,
                    help='number of threads used, default is '+str(C_THREADS))
    parser.add_argument('-s','--thinning',dest='thinning',metavar='N',type=int,default=DEF_THINNING,
@@ -187,7 +188,9 @@ def main(argv):
    A=np.array(A)
    u=(np.array(u))[0]
    M=[m for m in M]
-   print averageMixingTime(A,M,u,args.runs,args.verbose,thinning,burnin)
+   if args.fibersize < 0:
+      args.fibersize=countFiber(A,u)
+   print averageMixingTime(A,M,u,args.fibersize,args.runs,args.verbose,thinning,burnin)
 
 if __name__ == "__main__":
     freeze_support()
