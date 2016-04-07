@@ -3,11 +3,11 @@ import numpy as np
 import sys
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
-from sage.all import *
 import argparse
 from random import randint
-from sage.interfaces.four_ti_2 import FourTi2
 from subprocess import call
+from sage.all import *
+from sage.interfaces.four_ti_2 import FourTi2
 
 def countFiber(A,v):
    b=np.array([[i for i in A.dot(v)]])
@@ -90,20 +90,16 @@ def main(argv):
                        metavar='mat.file',
                        type=str,
                        help='the constraint matrix')
-   parser.add_argument('--markov',dest='markov', metavar='mar.file', type=str,
-                   help='the Markov basis')
+   parser.add_argument('--markov',dest='markov',
+                       metavar='mar.file',
+                       type=str,
+                       help='the Markov basis')
    parser.add_argument('--initial',dest='initial', metavar='ini.file', type=str,
                    help='the initial node')
    parser.add_argument('--runs',dest='runs',metavar='N',type=int,default=1,
                    help='the number of times the random walk is runned')
    parser.add_argument('--verbose', help="Turn on verbose-mode",action="store_true")
    args = parser.parse_args()
-   #print args.
-   #return 0
-
-   #mat=argv[1]
-   #mar=argv[2]
-   #ini=argv[3]
 
    #read input
    f=FourTi2(os.curdir)
@@ -115,7 +111,6 @@ def main(argv):
    A=np.array(A)
    u=(np.array(u))[0]
    M=[m for m in M]
-   #print uniformWalk(A,M,u,verbose=args.verbose)
    print averageMixingTime(A,M,u,m=args.runs,verbose=args.verbose)
 
 if __name__ == "__main__": main(sys.argv)
