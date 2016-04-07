@@ -5,7 +5,6 @@ import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import itertools
 import argparse
-from random import randint
 from subprocess import call
 from sage.all import *
 from sage.interfaces.four_ti_2 import FourTi2
@@ -20,7 +19,7 @@ C_LATTEPAR='--count-lattice-points'
 C_LATTEOUT='numOfLatticePoints'
 C_CURDIR=os.path.dirname(os.path.abspath(__file__))+'/'
 C_OUTFILE_FIG='out.eps'
-C_OUTFILE_DAT='out.npy'
+C_OUTFILE_DAT='out.txt'
 
 #walk specific parameters
 DEF_THINNING=1
@@ -60,8 +59,28 @@ def countFiber(A,v):
    with open(tDir+C_LATTEOUT,'r') as f:
       return int(f.read())
 
+def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,mt):
+   global C_CURDIR
+   global C_OUTFILE_DAT
+   #save array to outfile
+   with open(C_CURDIR+C_OUTFILE_DAT,'wb') as f:
+      f.write('################################\n')
+      f.write('Average mixing time:\t\t\t'+str(mt.mean())+'\n')
+      f.write('Number of walks:\t\t\t\t'+str(runs)+'\n')
+      f.write('Number of lattice points:\t'+str(fibersize)+'\n')
+      f.write('Thinning of walk:\t'+str(thinning)+'\n')
+      f.write('Burn-in:\t'+str(burnin)+'\n')
+      f.write('################################\n')
+      f.write('##Constraint Matrix\n')
+      np.savetxt(f,A,fmt='%d')
+      f.write('##Markov moves\n')
+      np.savetxt(f,M,fmt='%d')
+      f.write('##Initial vertex\n')
+      np.savetxt(f,u,fmt='%d')
+      f.write('##Observed mixing times\n')
+      np.savetxt(f,mt.T,fmt='%d')
 
-def averageMixingTime(A,M,u,fibersize,runs,verbose,thinning,burnin):
+def estimateMixing(A,M,u,fibersize,runs,verbose,thinning,burnin):
    global C_THREADS
    global C_CURDIR
 
@@ -73,10 +92,11 @@ def averageMixingTime(A,M,u,fibersize,runs,verbose,thinning,burnin):
    thinning_args=itertools.repeat(thinning,runs)
    burnin_args=itertools.repeat(burnin,runs)
    p = Pool(C_THREADS)
-   x=np.array(p.map(walk_par,itertools.izip(A_args,M_args,u_args,fibersize_args,verbose_args,thinning_args,burnin_args)))
-   mean=x.mean()
+   mt=np.array(p.map(walk_par,itertools.izip(A_args,M_args,u_args,fibersize_args,verbose_args,thinning_args,burnin_args)))
+   print mt
+   mean=mt.mean()
 
-   plt.hist(x,facecolor='c',bins=20)
+   plt.hist(mt,facecolor='c',bins=20)
    plt.xlabel('Number of steps')
    plt.ylabel('Number of occurences')
    plt.title(r'Mixing time')
@@ -85,23 +105,24 @@ def averageMixingTime(A,M,u,fibersize,runs,verbose,thinning,burnin):
    plt.grid(True)
    #save figure to outfile
    plt.savefig(C_CURDIR+C_OUTFILE_FIG,format='eps',dpi=1000)
-   #save array to outfile
-   with open(C_CURDIR+C_OUTFILE_DAT,'wb') as f:
-      np.save(f,x)
-
+   #write output file 
+   writeOutfile(A,M,u,fibersize,runs,thinning,burnin,mt)
    #plt.show()
-   return x.mean()
+   return mt.mean()
 
 def next(u,M):
-   m=(2*randint(0,1)-1)*M[randint(0,len(M)-1)]
+   m=(2*np.random.randint(0,2)-1)*M[np.random.randint(0,len(M))]
    if all(j>=0 for j in u+m):
       u=u+m
    return u
 
 def walk_par(args):
+   #seed random number generator
+   np.random.seed()
    return walk(*args)
 
 def walk(A,M,u,n,verbose,thinning,burnin):
+   seed()
    T={}
    i=0
    k=0
@@ -127,9 +148,7 @@ def walk(A,M,u,n,verbose,thinning,burnin):
 
       #sample next fiber element
       u=next(u,M)
-
-   return i
-
+   return k
 
 def main(argv):
    global C_CURDIR
@@ -190,7 +209,7 @@ def main(argv):
    M=[m for m in M]
    if args.fibersize < 0:
       args.fibersize=countFiber(A,u)
-   print averageMixingTime(A,M,u,args.fibersize,args.runs,args.verbose,thinning,burnin)
+   print estimateMixing(A,M,u,args.fibersize,args.runs,args.verbose,thinning,burnin)
 
 if __name__ == "__main__":
     freeze_support()
