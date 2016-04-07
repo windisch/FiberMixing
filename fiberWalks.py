@@ -74,7 +74,7 @@ def averageMixingTime(A,M,u,m,verbose=False):
    plt.ylabel('Number of occurences')
    plt.title(r'Mixing time')
    plt.axvline(mean, color='b', linestyle='dashed', linewidth=2)
-   plt.text(mean,10,'Arithmethic mean',rotation=90)
+   #plt.text(mean,10,'Arithmethic mean',rotation=90)
    #plt.axis([40, 160, 0, 0.03])
    plt.grid(True)
    #save figure to outfile
@@ -131,24 +131,30 @@ def main(argv):
 
    #Parse arguments
    parser = argparse.ArgumentParser(description='Fiber walks mixing time estimation')
-   parser.add_argument('--matrix',
+
+   requiredArgs = parser.add_argument_group('required arguments')
+   requiredArgs.add_argument('-c','--matrix',
                        dest='matrix',
                        metavar='mat.file',
                        type=str,
-                       help='the constraint matrix')
-   parser.add_argument('--markov',dest='markov',
+                       help='path to constraint matrix')
+   requiredArgs.add_argument('-m','--markov',dest='markov',
                        metavar='mar.file',
                        type=str,
-                       help='the Markov basis')
-   parser.add_argument('--initial',dest='initial', metavar='ini.file', type=str,
-                   help='the initial node')
-   parser.add_argument('--runs',dest='runs',metavar='N',type=int,default=1,
-                   help='the number of times the random walk is runned')
-   parser.add_argument('--threads',dest='threads',metavar='N',type=int,default=C_THREADS,
-                   help='the number of threads used')
-   parser.add_argument('--latte',dest='latte',metavar='dir',type=str,default=C_LATTEDIR,
+                       help='path to Markov basis')
+   requiredArgs.add_argument('-i','--initial',
+                       dest='initial',
+                       metavar='ini.file',
+                       type=str,
+                       help='path to initial node')
+   requiredArgs.add_argument('-l','--latte',dest='latte',metavar='/latte/path/',type=str,default=C_LATTEDIR,
                    help='path to LattE binaries')
-   parser.add_argument('--verbose', help="turn on verbose-mode",action="store_true")
+
+   parser.add_argument('-r','--runs',dest='runs',metavar='N',type=int,default=1,
+                   help='number of random walk runs, default is 1')
+   parser.add_argument('-t','--threads',dest='threads',metavar='N',type=int,default=C_THREADS,
+                   help='number of threads used, default is '+str(C_THREADS))
+   parser.add_argument('-v','--verbose', help="turn on verbose-mode",action="store_true")
    args = parser.parse_args()
 
    #read input
