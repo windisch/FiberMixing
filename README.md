@@ -12,7 +12,17 @@ sage -python fiberWalks.py --matrix examples/matrix.mat
 ```
 
 *All files containing matrices or vectors have to be in the
-[4ti2](www.4ti2.de)/[LattE](https://www.math.ucdavis.edu/~latte/)-format.*
+[4ti2](www.4ti2.de)/[LattE](https://www.math.ucdavis.edu/~latte/)-format, for example*
+
+```R
+2 4
+1 2 3 4
+5 6 7 8
+9 0 1 2
+3 4 5 6
+
+```
+
 
 The random walk runs until the approximated distribution differs from
 the uniform distribution by at most 0.25 (i.e. the mixing time). The
