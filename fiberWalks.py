@@ -3,11 +3,17 @@ import numpy as np
 import sys
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
+import itertools
 import argparse
 from random import randint
 from subprocess import call
 from sage.all import *
 from sage.interfaces.four_ti_2 import FourTi2
+from multiprocessing import Process
+from multiprocessing import Pool
+from multiprocessing import freeze_support
+
+N_THREADS=1
 
 def countFiber(A,v):
    b=np.array([[i for i in A.dot(v)]])
@@ -36,9 +42,20 @@ def countFiber(A,v):
    with open(tDir+latteOut,'r') as f:
       return int(f.read())
 
+
 def averageMixingTime(A,M,u,m,verbose=False):
+   global N_THREADS
    n=countFiber(A,u)
-   x=np.array([uniformWalk(A,M,u,n,verbose=verbose) for i in xrange(m)])
+   #x=np.array([uniformWalk(A,M,u,n,verbose=verbose) for i in xrange(m)])
+
+   A_args=itertools.repeat(A,m)
+   M_args=itertools.repeat(M,m)
+   u_args=itertools.repeat(u,m)
+   n_args=itertools.repeat(n,m)
+   v_args=itertools.repeat(verbose,m)
+   p = Pool(N_THREADS)
+   x=np.array(p.map(uniformWalk_par,itertools.izip(A_args,M_args,u_args,n_args,v_args)))
+
    plt.hist(x,facecolor='c',bins=20)
    plt.xlabel('Number of steps')
    plt.ylabel('Number of occurences')
@@ -53,6 +70,10 @@ def hypergeoWalk(M,u,n):
    return 'TODO'
 
 #thining; burn-in
+
+
+def uniformWalk_par(args):
+    return uniformWalk(*args)
 
 def uniformWalk(A,M,u,n=0,verbose=False):
    if n==0:
@@ -82,7 +103,10 @@ def uniformWalk(A,M,u,n=0,verbose=False):
            u=u+m
    return i
 
+
 def main(argv):
+   global N_THREADS
+
    #Parse arguments
    parser = argparse.ArgumentParser(description='Process some integers.')
    parser.add_argument('--matrix',
@@ -98,6 +122,8 @@ def main(argv):
                    help='the initial node')
    parser.add_argument('--runs',dest='runs',metavar='N',type=int,default=1,
                    help='the number of times the random walk is runned')
+   parser.add_argument('--threads',dest='threads',metavar='N',type=int,default=1,
+                   help='the number of threads used')
    parser.add_argument('--verbose', help="Turn on verbose-mode",action="store_true")
    args = parser.parse_args()
 
@@ -106,6 +132,7 @@ def main(argv):
    A=f.read_matrix(args.matrix)
    M=f.read_matrix(args.markov)
    u=f.read_matrix(args.initial)
+   N_THREADS=args.threads
 
    #convert input
    A=np.array(A)
@@ -113,4 +140,6 @@ def main(argv):
    M=[m for m in M]
    print averageMixingTime(A,M,u,m=args.runs,verbose=args.verbose)
 
-if __name__ == "__main__": main(sys.argv)
+if __name__ == "__main__":
+    freeze_support()
+    main(sys.argv)
