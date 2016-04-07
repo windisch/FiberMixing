@@ -41,7 +41,9 @@ sage -python fiberWalks.py --matrix examples/matrix.mat
 
 ##Walk-tuning
 The parameters `-s,--thinning` and `-b,--burn-in` allow to thin out
-the walk or to do a burn-in first.
+the walk or to do a burn-in first. The size of the fiber can be
+specified directly with `-f,--fiber-size` and in this case the LattE
+computation is ommited.
 
 ```bash
 sage -python fiberWalks.py --matrix examples/matrix.mat 
@@ -51,4 +53,5 @@ sage -python fiberWalks.py --matrix examples/matrix.mat
                            --threads 5
                            --thinning 10
                            --burn-in 50
+                           --fiber-size 55
 ```
