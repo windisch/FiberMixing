@@ -13,10 +13,10 @@ sage -python fiberWalks.py --matrix examples/matrix.mat
 ```
 
 The random walk runs until the approximated distribution differs from
-the uniform distribution by at most 0.25. The number of steps needed
-is then saved in `out.txt`. In case that the random walk is runned
-mulitple times (with the parameter `-r,--runs`), a histogram is saved
-in `out.eps`.
+the uniform distribution by at most 0.25 (i.e. the mixing time). The
+number of steps needed is then saved in `out.txt`. In case that the
+random walk is runned mulitple times (with the parameter `-r,--runs`),
+a histogram is saved in `out.eps`.
 
 ### Requirements
 The software [LattE](https://www.math.ucdavis.edu/~latte/) is used to
@@ -37,4 +37,18 @@ sage -python fiberWalks.py --matrix examples/matrix.mat
                            --initial examples/initial.mat 
                            --runs 1000 
                            --threads 5
+```
+
+##Walk-tuning
+The parameters `-s,--thinning` and `-b,--burn-in` allow to thin out
+the walk or to do a burn-in first.
+
+```bash
+sage -python fiberWalks.py --matrix examples/matrix.mat 
+                           --markov examples/markov.mat  
+                           --initial examples/initial.mat 
+                           --runs 1000 
+                           --threads 5
+                           --thinning 10
+                           --burn-in 50
 ```
