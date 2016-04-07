@@ -7,13 +7,15 @@ which uses the Markov moves as specified in `markov.mat` (these
 matrices have to be in)
 
 ```bash
-sage -python fiberWalks.py --matrix examples/matrix.mat --markov examples/markov.mat --initial examples/initial.mat 
+sage -python fiberWalks.py --matrix examples/matrix.mat 
+                           --markov examples/markov.mat 
+                           --initial examples/initial.mat 
 ```
 
 The random walk runs until the approximated distribution differs from
 the uniform distribution by at most 0.25. The number of steps needed
 is then saved in `out.txt`. In case that the random walk is runned
-mulitple times (with the parameter `-r,--runs`), a histogramm is saved
+mulitple times (with the parameter `-r,--runs`), a histogram is saved
 in `out.eps`.
 
 ### Requirements
@@ -30,5 +32,9 @@ walks can be perfomed in parallel by specifying the number of threads
 with `-t,--threads`.
 
 ```bash
-sage -python fiberWalks.py --matrix examples/matrix.mat --markov examples/markov.mat --initial examples/initial.mat --runs 1000 --threads 5
+sage -python fiberWalks.py --matrix examples/matrix.mat 
+                           --markov examples/markov.mat 
+                           --initial examples/initial.mat 
+                           --runs 1000 
+                           --threads 5
 ```
