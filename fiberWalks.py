@@ -27,6 +27,7 @@ DEF_VERBOSE=False
 DEF_RUNS=1
 DEF_BURNIN=0
 DEF_FIBERSIZE=-1
+DEF_COMPRESSING=False
 
 def countFiber(A,v):
    b=np.array([[i for i in A.dot(v)]])
@@ -64,13 +65,14 @@ def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,mt):
    global C_OUTFILE_DAT
    #save array to outfile
    with open(C_CURDIR+C_OUTFILE_DAT,'wb') as f:
-      f.write('################################\n')
-      f.write('Average mixing time:\t\t\t'+str(mt.mean())+'\n')
-      f.write('Number of walks:\t\t\t\t'+str(runs)+'\n')
-      f.write('Number of lattice points:\t'+str(fibersize)+'\n')
-      f.write('Thinning of walk:\t'+str(thinning)+'\n')
-      f.write('Burn-in:\t'+str(burnin)+'\n')
-      f.write('################################\n')
+      f.write('####################################\n')
+      f.write('Average mixing time:\t\t\t\t'+str(mt.mean())+'\n')
+      f.write('Number of walks:\t\t\t\t\t'+str(runs)+'\n')
+      f.write('Number of lattice points:\t\t'+str(fibersize)+'\n')
+      f.write('Thinning of walk:\t\t\t\t\t'+str(thinning)+'\n')
+      f.write('Number of steps in burn-in:\t'+str(burnin)+'\n')
+      f.write('Use compressing mode:\t\t\t'+str(DEF_COMPRESSING)+'\n')
+      f.write('####################################\n')
       f.write('##Constraint Matrix\n')
       np.savetxt(f,A,fmt='%d')
       f.write('##Markov moves\n')
@@ -110,10 +112,34 @@ def estimateMixing(A,M,u,fibersize,runs,verbose,thinning,burnin):
    #plt.show()
    return mt.mean()
 
+def isPositive(u):
+   return all(j>=0 for j in u)
+
+def ray(u,m):
+#returns the ray {u,u+m,u+2m,...,u+k*m} with k maximal such that u+k*m
+#is positive
+   R=[0]
+   #positive direction
+   i=1
+   while isPositive(u+i*m):
+       R.append(i)
+       i+=1
+   i=-1
+   while isPositive(u+i*m):
+       R.append(i)
+       i-=1
+   return R
+
 def next(u,M):
-   m=np.random.choice([1,-1])*M[np.random.randint(0,len(M))]
-   if all(j>=0 for j in u+m):
-      u=u+m
+   global DEF_COMPRESSING
+   #choose move uniformly
+   m=M[np.random.randint(0,len(M))]
+   if DEF_COMPRESSING:
+      u=u+np.random.choice(ray(u,m))*m
+   else:
+      m=np.random.choice([1,-1])*m
+      if isPositive(u+m):
+         u=u+m
    return u
 
 def walk_par(args):
@@ -157,6 +183,7 @@ def main(argv):
    global DEF_THINNING
    global DEF_BURNIN
    global DEF_VERBOSE
+   global DEF_COMPRESSING
    global DEF_RUNS
 
    #Parse arguments
@@ -164,7 +191,7 @@ def main(argv):
 
    #required arguments
    requiredArgs = parser.add_argument_group('required arguments')
-   requiredArgs.add_argument('-c','--matrix',
+   requiredArgs.add_argument('-a','--matrix',
                        dest='matrix',
                        metavar='mat.file',
                        type=str,
@@ -189,7 +216,9 @@ def main(argv):
                    help='number of threads used, default is '+str(C_THREADS))
    parser.add_argument('-s','--thinning',dest='thinning',metavar='N',type=int,default=DEF_THINNING,
                    help='take only every Nth sample, default is '+str(DEF_THINNING))
-   parser.add_argument('-b','--burn-in',dest='burnin',metavar='N',type=int,default=DEF_THINNING,
+   parser.add_argument('-c','--compressing',dest='compressing',action="store_true",default=DEF_COMPRESSING,
+                   help='compress the random walk')
+   parser.add_argument('-b','--burn-in',dest='burnin',metavar='N',type=int,default=DEF_BURNIN,
                    help='do a burn-in with N steps before sampling, default is '+str(DEF_BURNIN))
    parser.add_argument('-v','--verbose', help="turn on verbose-mode",action="store_true",default=DEF_VERBOSE)
    args = parser.parse_args()
@@ -203,6 +232,8 @@ def main(argv):
    C_LATTEDIR=args.latte
    thinning=args.thinning
    burnin=args.burnin
+   DEF_COMPRESSING=args.compressing
+
    #convert input
    A=np.array(A)
    u=(np.array(u))[0]
