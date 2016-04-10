@@ -9,9 +9,7 @@ import collections
 from subprocess import call
 from sage.all import *
 from sage.interfaces.four_ti_2 import FourTi2
-from multiprocessing import Process
-from multiprocessing import Pool
-from multiprocessing import freeze_support
+from multiprocessing import Process, Pool, freeze_support, Value
 
 C_THREADS=1
 C_LATTEBIN='count'
@@ -30,6 +28,8 @@ DEF_RUNS=1
 DEF_BURNIN=0
 DEF_FIBERSIZE=-1
 DEF_COMPRESSING=False
+
+finished = Value("i", 0)
 
 def countFiber(A,v):
    b=np.array([[i for i in A.dot(v)]])
@@ -62,10 +62,11 @@ def countFiber(A,v):
    with open(tDir+C_LATTEOUT,'r') as f:
       return int(f.read())
 
-def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,res):
+def writeOutfile(A,M,u,fibersize,thinning,burnin,res):
    global C_CURDIR
    global C_OUTFILE_DAT
    global C_OUTFILE_NPY
+   global DEF_RUNS
 
    mt=np.array([i['mixing_time'] for i in res])
    ot=np.array([i['observed_tables'] for i in res])
@@ -74,7 +75,7 @@ def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,res):
       f.write('####################################\n')
       f.write('Average mixing time:\t\t\t\t'+str(mt.mean())+'\n')
       f.write('Average of observed tables:\t'+str(ot.mean())+'\n')
-      f.write('Number of walks:\t\t\t\t\t'+str(runs)+'\n')
+      f.write('Number of walks:\t\t\t\t\t'+str(DEF_RUNS)+'\n')
       f.write('Number of lattice points:\t\t'+str(fibersize)+'\n')
       f.write('Thinning of walk:\t\t\t\t\t'+str(thinning)+'\n')
       f.write('Number of steps in burn-in:\t'+str(burnin)+'\n')
@@ -94,17 +95,18 @@ def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,res):
    with open(C_CURDIR+C_OUTFILE_NPY,'wb') as f:
       np.save(f,res)
 
-def estimateMixing(A,M,u,fibersize,runs,verbose,thinning,burnin):
+def estimateMixing(A,M,u,fibersize,verbose,thinning,burnin):
    global C_THREADS
    global C_CURDIR
+   global DEF_RUNS
 
-   A_args=itertools.repeat(A,runs)
-   M_args=itertools.repeat(M,runs)
-   u_args=itertools.repeat(u,runs)
-   fibersize_args=itertools.repeat(fibersize,runs)
-   verbose_args=itertools.repeat(verbose,runs)
-   thinning_args=itertools.repeat(thinning,runs)
-   burnin_args=itertools.repeat(burnin,runs)
+   A_args=itertools.repeat(A,DEF_RUNS)
+   M_args=itertools.repeat(M,DEF_RUNS)
+   u_args=itertools.repeat(u,DEF_RUNS)
+   fibersize_args=itertools.repeat(fibersize,DEF_RUNS)
+   verbose_args=itertools.repeat(verbose,DEF_RUNS)
+   thinning_args=itertools.repeat(thinning,DEF_RUNS)
+   burnin_args=itertools.repeat(burnin,DEF_RUNS)
    p = Pool(C_THREADS)
    res=np.array(p.map(walk_par,itertools.izip(A_args,M_args,u_args,fibersize_args,verbose_args,thinning_args,burnin_args)))
    mt=np.array([i['mixing_time'] for i in res])
@@ -119,7 +121,7 @@ def estimateMixing(A,M,u,fibersize,runs,verbose,thinning,burnin):
    #save figure to outfile
    plt.savefig(C_CURDIR+C_OUTFILE_FIG,format='eps',dpi=1000)
    #write output file 
-   writeOutfile(A,M,u,fibersize,runs,thinning,burnin,res)
+   writeOutfile(A,M,u,fibersize,thinning,burnin,res)
    #plt.show()
    #return res
 
@@ -166,7 +168,6 @@ def walk(A,M,u,n,verbose,thinning,burnin):
    k=0
    d=1
    #burnin
-
    for i in xrange(burnin):
       u=next(u,M)
    while d>0.25:
@@ -187,6 +188,8 @@ def walk(A,M,u,n,verbose,thinning,burnin):
 
       #sample next fiber element
       u=next(u,M)
+   finished.value+=1
+   print str(finished.value) + '/' + str(DEF_RUNS)
    res['mixing_time']=k
    res['observed_tables']=len(T)
    return res
@@ -250,6 +253,7 @@ def main(argv):
    thinning=args.thinning
    burnin=args.burnin
    DEF_COMPRESSING=args.compressing
+   DEF_RUNS=args.runs
 
    #convert input
    A=np.array(A)
@@ -257,7 +261,7 @@ def main(argv):
    M=[m for m in M]
    if args.fibersize < 0:
       args.fibersize=countFiber(A,u)
-   estimateMixing(A,M,u,args.fibersize,args.runs,args.verbose,thinning,burnin)
+   estimateMixing(A,M,u,args.fibersize,args.verbose,thinning,burnin)
 
 if __name__ == "__main__":
     freeze_support()
