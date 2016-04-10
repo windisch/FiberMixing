@@ -65,7 +65,7 @@ def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,mt):
    global C_CURDIR
    global C_OUTFILE_DAT
    global C_OUTFILE_NPY
-   #save array to outfile
+   #save parameters to txt-file
    with open(C_CURDIR+C_OUTFILE_DAT,'wb') as f:
       f.write('####################################\n')
       f.write('Average mixing time:\t\t\t\t'+str(mt.mean())+'\n')
@@ -84,6 +84,10 @@ def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,mt):
       f.write('##Observed mixing times\n')
       np.savetxt(f,mt.T,fmt='%d')
 
+   with open(C_CURDIR+C_OUTFILE_NPY,'wb') as f:
+      np.save(f,mt)
+
+
 def estimateMixing(A,M,u,fibersize,runs,verbose,thinning,burnin):
    global C_THREADS
    global C_CURDIR
@@ -97,7 +101,6 @@ def estimateMixing(A,M,u,fibersize,runs,verbose,thinning,burnin):
    burnin_args=itertools.repeat(burnin,runs)
    p = Pool(C_THREADS)
    mt=np.array(p.map(walk_par,itertools.izip(A_args,M_args,u_args,fibersize_args,verbose_args,thinning_args,burnin_args)))
-   print mt
    mean=mt.mean()
 
    plt.hist(mt,facecolor='c',bins=20)
