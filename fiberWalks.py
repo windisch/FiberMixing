@@ -73,12 +73,12 @@ def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,res):
    with open(C_CURDIR+C_OUTFILE_DAT,'wb') as f:
       f.write('####################################\n')
       f.write('Average mixing time:\t\t\t\t'+str(mt.mean())+'\n')
+      f.write('Average of observed tables:\t'+str(ot.mean())+'\n')
       f.write('Number of walks:\t\t\t\t\t'+str(runs)+'\n')
       f.write('Number of lattice points:\t\t'+str(fibersize)+'\n')
       f.write('Thinning of walk:\t\t\t\t\t'+str(thinning)+'\n')
       f.write('Number of steps in burn-in:\t'+str(burnin)+'\n')
       f.write('Use compressing mode:\t\t\t'+str(DEF_COMPRESSING)+'\n')
-      f.write('Observed tables:\t\t\t\t'+str(ot.mean())+'\n')
       f.write('####################################\n')
       f.write('##Constraint Matrix\n')
       np.savetxt(f,A,fmt='%d')
