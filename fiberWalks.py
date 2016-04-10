@@ -17,9 +17,10 @@ C_LATTEBIN='count'
 C_LATTEDIR=''
 C_LATTEPAR='--count-lattice-points'
 C_LATTEOUT='numOfLatticePoints'
-C_CURDIR=os.path.dirname(os.path.abspath(__file__))+'/'
+C_CURDIR=os.getcwd()+'/'
 C_OUTFILE_FIG='out.eps'
 C_OUTFILE_DAT='out.txt'
+C_OUTFILE_NPY='out.npy'
 
 #walk specific parameters
 DEF_THINNING=1
@@ -63,6 +64,7 @@ def countFiber(A,v):
 def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,mt):
    global C_CURDIR
    global C_OUTFILE_DAT
+   global C_OUTFILE_NPY
    #save array to outfile
    with open(C_CURDIR+C_OUTFILE_DAT,'wb') as f:
       f.write('####################################\n')
