@@ -5,6 +5,7 @@ import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import itertools
 import argparse
+import collections
 from subprocess import call
 from sage.all import *
 from sage.interfaces.four_ti_2 import FourTi2
@@ -61,10 +62,13 @@ def countFiber(A,v):
    with open(tDir+C_LATTEOUT,'r') as f:
       return int(f.read())
 
-def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,mt):
+def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,res):
    global C_CURDIR
    global C_OUTFILE_DAT
    global C_OUTFILE_NPY
+
+   mt=np.array([i['mixing_time'] for i in res])
+   ot=np.array([i['observed_tables'] for i in res])
    #save parameters to txt-file
    with open(C_CURDIR+C_OUTFILE_DAT,'wb') as f:
       f.write('####################################\n')
@@ -74,6 +78,7 @@ def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,mt):
       f.write('Thinning of walk:\t\t\t\t\t'+str(thinning)+'\n')
       f.write('Number of steps in burn-in:\t'+str(burnin)+'\n')
       f.write('Use compressing mode:\t\t\t'+str(DEF_COMPRESSING)+'\n')
+      f.write('Observed tables:\t\t\t\t'+str(ot.mean())+'\n')
       f.write('####################################\n')
       f.write('##Constraint Matrix\n')
       np.savetxt(f,A,fmt='%d')
@@ -83,10 +88,11 @@ def writeOutfile(A,M,u,fibersize,runs,thinning,burnin,mt):
       np.savetxt(f,u,fmt='%d')
       f.write('##Observed mixing times\n')
       np.savetxt(f,mt.T,fmt='%d')
+      f.write('##Number of observed tables\n')
+      np.savetxt(f,ot.T,fmt='%d')
 
    with open(C_CURDIR+C_OUTFILE_NPY,'wb') as f:
-      np.save(f,mt)
-
+      np.save(f,res)
 
 def estimateMixing(A,M,u,fibersize,runs,verbose,thinning,burnin):
    global C_THREADS
@@ -100,22 +106,22 @@ def estimateMixing(A,M,u,fibersize,runs,verbose,thinning,burnin):
    thinning_args=itertools.repeat(thinning,runs)
    burnin_args=itertools.repeat(burnin,runs)
    p = Pool(C_THREADS)
-   mt=np.array(p.map(walk_par,itertools.izip(A_args,M_args,u_args,fibersize_args,verbose_args,thinning_args,burnin_args)))
-   mean=mt.mean()
+   res=np.array(p.map(walk_par,itertools.izip(A_args,M_args,u_args,fibersize_args,verbose_args,thinning_args,burnin_args)))
+   mt=np.array([i['mixing_time'] for i in res])
 
    plt.hist(mt,facecolor='c',bins=20)
    plt.xlabel('Number of steps')
    plt.ylabel('Number of occurences')
    plt.title(r'Mixing time')
-   plt.axvline(mean, color='b', linestyle='dashed', linewidth=2)
+   plt.axvline(mt.mean(), color='b', linestyle='dashed', linewidth=2)
    #plt.axis([40, 160, 0, 0.03])
    plt.grid(True)
    #save figure to outfile
    plt.savefig(C_CURDIR+C_OUTFILE_FIG,format='eps',dpi=1000)
    #write output file 
-   writeOutfile(A,M,u,fibersize,runs,thinning,burnin,mt)
+   writeOutfile(A,M,u,fibersize,runs,thinning,burnin,res)
    #plt.show()
-   return mt.mean()
+   return res
 
 def isPositive(u):
    return all(j>=0 for j in u)
@@ -155,10 +161,12 @@ def walk_par(args):
 def walk(A,M,u,n,verbose,thinning,burnin):
    seed()
    T={}
+   res={}
    i=0
    k=0
    d=1
    #burnin
+
    for i in xrange(burnin):
       u=next(u,M)
    while d>0.25:
@@ -179,7 +187,9 @@ def walk(A,M,u,n,verbose,thinning,burnin):
 
       #sample next fiber element
       u=next(u,M)
-   return k
+   res['mixing_time']=k
+   res['observed_tables']=len(T)
+   return res
 
 def main(argv):
    global C_CURDIR
@@ -190,6 +200,8 @@ def main(argv):
    global DEF_VERBOSE
    global DEF_COMPRESSING
    global DEF_RUNS
+
+
 
    #Parse arguments
    parser = argparse.ArgumentParser(description='Fiber walks mixing time estimation')
