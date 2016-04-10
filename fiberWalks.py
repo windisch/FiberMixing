@@ -121,7 +121,7 @@ def estimateMixing(A,M,u,fibersize,runs,verbose,thinning,burnin):
    #write output file 
    writeOutfile(A,M,u,fibersize,runs,thinning,burnin,res)
    #plt.show()
-   return res
+   #return res
 
 def isPositive(u):
    return all(j>=0 for j in u)
@@ -257,7 +257,7 @@ def main(argv):
    M=[m for m in M]
    if args.fibersize < 0:
       args.fibersize=countFiber(A,u)
-   print estimateMixing(A,M,u,args.fibersize,args.runs,args.verbose,thinning,burnin)
+   estimateMixing(A,M,u,args.fibersize,args.runs,args.verbose,thinning,burnin)
 
 if __name__ == "__main__":
     freeze_support()
