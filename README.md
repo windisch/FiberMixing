@@ -23,7 +23,6 @@ sage -python fiberWalks.py --matrix examples/matrix.mat
 
 ```
 
-
 The random walk runs until the approximated distribution differs from
 the uniform distribution by at most 0.25 (i.e. the mixing time). The
 number of steps needed is then saved in `out.txt`. In case that the
@@ -67,3 +66,10 @@ sage -python fiberWalks.py --matrix examples/matrix.mat
                            --burn-in 50
                            --fiber-size 55
 ```
+
+##Output-files
+After the random walk is completed, the parameters of the random walk
+are saved in `out.txt`, the observed mixing times are stored as a
+numpy-array in `out.npy` (which can be loaded in sage with the command
+`numpy.load`), and a histogram which shows the distribution of the
+mixing times of all runs is stored in `out.eps`.
