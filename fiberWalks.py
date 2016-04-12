@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import itertools
 import argparse
 import collections
+import multiprocessing
 from subprocess import call
 from sage.all import *
 from sage.interfaces.four_ti_2 import FourTi2
@@ -28,6 +29,7 @@ DEF_RUNS=1
 DEF_BURNIN=0
 DEF_FIBERSIZE=-1
 DEF_COMPRESSING=False
+DEF_ENDLESS=False
 
 finished = Value("i", 0)
 
@@ -109,6 +111,8 @@ def estimateMixing(A,M,u,fibersize,verbose,thinning,burnin):
    burnin_args=itertools.repeat(burnin,DEF_RUNS)
    p = Pool(C_THREADS)
    res=np.array(p.map(walk_par,itertools.izip(A_args,M_args,u_args,fibersize_args,verbose_args,thinning_args,burnin_args)))
+   print res
+   return 0
    mt=np.array([i['mixing_time'] for i in res])
 
    plt.hist(mt,facecolor='c',bins=20)
@@ -161,6 +165,7 @@ def walk_par(args):
    return walk(*args)
 
 def walk(A,M,u,n,verbose,thinning,burnin):
+   threadid=multiprocessing.current_process()._identity[0]
    seed()
    T={}
    res={}
@@ -192,6 +197,9 @@ def walk(A,M,u,n,verbose,thinning,burnin):
    print str(finished.value) + '/' + str(DEF_RUNS)
    res['mixing_time']=k
    res['observed_tables']=len(T)
+   if DEF_ENDLESS:
+      with open(C_CURDIR+'out_'+str(threadid),'a') as f:
+         f.write(str(k)+'\n')
    return res
 
 def main(argv):
@@ -203,8 +211,7 @@ def main(argv):
    global DEF_VERBOSE
    global DEF_COMPRESSING
    global DEF_RUNS
-
-
+   global DEF_ENDLESS
 
    #Parse arguments
    parser = argparse.ArgumentParser(description='Fiber walks mixing time estimation')
@@ -240,7 +247,8 @@ def main(argv):
                    help='compress the random walk')
    parser.add_argument('-b','--burn-in',dest='burnin',metavar='N',type=int,default=DEF_BURNIN,
                    help='do a burn-in with N steps before sampling, default is '+str(DEF_BURNIN))
-   parser.add_argument('-v','--verbose', help="turn on verbose-mode",action="store_true",default=DEF_VERBOSE)
+   parser.add_argument('-v','--verbose', help="turn on verbose-mode",dest='verbose',action="store_true",default=DEF_VERBOSE)
+   parser.add_argument('-e','--endless', help="turn on endless-mode",dest='endless',action="store_true",default=DEF_ENDLESS)
    args = parser.parse_args()
 
    #read input
@@ -254,6 +262,7 @@ def main(argv):
    burnin=args.burnin
    DEF_COMPRESSING=args.compressing
    DEF_RUNS=args.runs
+   DEF_ENDLESS=args.endless
 
    #convert input
    A=np.array(A)
