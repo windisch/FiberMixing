@@ -111,8 +111,6 @@ def estimateMixing(A,M,u,fibersize,verbose,thinning,burnin):
    burnin_args=itertools.repeat(burnin,DEF_RUNS)
    p = Pool(C_THREADS)
    res=np.array(p.map(walk_par,itertools.izip(A_args,M_args,u_args,fibersize_args,verbose_args,thinning_args,burnin_args)))
-   print res
-   return 0
    mt=np.array([i['mixing_time'] for i in res])
 
    plt.hist(mt,facecolor='c',bins=20)
